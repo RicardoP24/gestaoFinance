@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="home.css">
+    <title>Document</title>
+</head>
+
+
+
+<body>
+    <div id="app">
+        <div id="form-container">
+            <h2>Add / edit Transaction</h2>
+            <form id="transaction-form">
+                <label for="id">Id ( só para edição ):</label>
+                <input type="number" id="id" required>
+
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" required>
+
+                <label for="category">Category:</label>
+                <input type="text" id="category" required>
+
+                <label for="date">Date:</label>
+                <input type="date" id="date" required>
+
+                <label for="description">Description:</label>
+                <textarea id="description"></textarea>
+
+                <button type="button" onclick="addorEditTransaction()">Add Transaction</button>
+            </form>
+        </div>
+        <div id="graficoBack">
+            <h2>Income vs Expenses</h2>
+
+            <canvas id="pieChart" width="200" height="200"></canvas>
+
+        </div>
+
+        <div id="entries">
+            <h2>Transaction History</h2>
+            <table id="transactionTable">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Transaction data will be inserted here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+</body>
+<script>
+
+    function drawPieChart(data) {
+        const canvas = document.getElementById("pieChart");
+        const ctx = canvas.getContext("2d");
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = canvas.width / 2 - 5; // 5 pixels padding
+
+        let total = 0;
+        for (const value of data) {
+            total += value;
+        }
+
+        let startAngle = 0;
+        for (let i = 0; i < 2; i++) {
+            const sliceAngle = (data[i] / total) * (2 * Math.PI);
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            if (i == 0 && data[i] != 0)
+                ctx.fillStyle = '#62C370';
+            else if (i == 1 && data[i] != 0)
+                ctx.fillStyle = '#ff3c38';
+
+
+            ctx.fill();
+
+            const labelX = centerX + Math.cos(startAngle + sliceAngle / 2) * (radius / 1.5);
+            const labelY = centerY + Math.sin(startAngle + sliceAngle / 2) * (radius / 1.5);
+            ctx.fillStyle = "#000";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`${((data[i] / total) * 100).toFixed(1)}%`, labelX, labelY);
+
+            startAngle += sliceAngle;
+        }
+    }
+
+    // Function to generate a random color
+    function getRandomColor() {
+        const letters = "0123456789ABCDEF";
+        let color = "#";
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // Example data
+    const chartData = []; // Modify this array to change the chart values
+
+    // Draw the pie chart with the example data
+
+    function somaArray(transactions) {
+
+        let total = 0
+        let lucros = 0
+        let gastos = 0
+        for (transaction of transactions) {
+
+            const amount = parseInt(transaction.amount)
+            console.log(amount)
+
+            if (amount >= 0) {
+
+                lucros += amount
+            } else {
+                gastos += amount
+
+            }
+
+            console.log(lucros)
+            console.log(gastos)
+
+            total = total + Math.abs(amount)
+
+
+        }
+
+
+        chartData.push(Math.floor(lucros / total * 100))
+        chartData.push(Math.abs(Math.floor(gastos / total * 100)))
+
+
+    }
+
+    async function addorEditTransaction() {
+        try {
+            const Id = document.getElementById('id').value;
+            const Amount = document.getElementById('amount').value;
+            const Date = document.getElementById('date').value;
+            const Category = document.getElementById('category').value;
+            const Description = document.getElementById('description').value;
+
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+                console.error('User ID not found in localStorage');
+                return;
+            }
+
+            // Create an object with non-empty values
+            const requestBody = {
+                user_id: userId,
+                amount: Amount,
+                date: Date,
+                category: Category,
+                description: Description,
+                transaction_id: null
+            };
+
+            // Add Id to the request body if it's not an empty string
+            if (Id !== '') {
+                requestBody.transaction_id = Id;
+            }
+
+            const response = await fetch('http://localhost:3000/createOrUpdateTransaction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                console.log(result.message);
+                alert('Transaction Added/Edited Successfully.')
+            } else {
+                console.error('Server error:', result.message);
+                alert(result.message)
+
+            }
+        } catch (error) {
+            console.error('Client error:', error.message);
+        }
+    }
+
+    async function fetchTransactions() {
+        try {
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+                console.error('User ID not found in localStorage');
+                return;
+            }
+
+            const response = await fetch(`http://localhost:3000/transactions?userId=${userId}`);
+            const result = await response.json();
+
+            if (response.ok) {
+                const transactions = result.transactions;
+
+                populateTransactionTable(transactions);
+                somaArray(transactions)
+                drawPieChart(chartData);
+            } else {
+                console.error('Server error:', result.message);
+            }
+        } catch (error) {
+            console.error('Client error:', error.message);
+        }
+    }
+
+
+    fetchTransactions()
+
+
+
+    // Function to populate the transaction table
+    function populateTransactionTable(transactions) {
+        const tableBody = document.getElementById('transactionTable').getElementsByTagName('tbody')[0];
+
+        transactions.forEach(transaction => {
+            const row = tableBody.insertRow(tableBody.rows.length);
+
+            const cellId = row.insertCell(0);
+            const cellDate = row.insertCell(1);
+            const cellAmount = row.insertCell(2);
+            const cellCategory = row.insertCell(3);
+            const cellDescription = row.insertCell(4);
+
+            cellId.textContent = transaction.transactionid;
+            cellDate.textContent = transaction.date;
+            cellAmount.textContent = transaction.amount;
+            cellCategory.textContent = transaction.category;
+            cellDescription.textContent = transaction.description;
+        });
+    }
+
+    // Call the function to populate the table
+</script>
+
+</html>
