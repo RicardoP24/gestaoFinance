@@ -36,25 +36,23 @@ app.post('/login', async (req, res) => {
   try {
     // Query the database to find a user with the provided email
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [username]);
-    console.log(result.rows)
 
     if (result.rows.length > 0) {
       const user = result.rows[0];
       const hashedPassword = user.password;
 
-      console.log(user,hashedPassword)
 
       // Compare the provided password with the hashed password from the database
       const passwordMatch = await bcrypt.compare(password, hashedPassword);
 
-      console.log(passwordMatch)
 
 
       if (passwordMatch) {
         const userID = user.userid;
+        const email = user.email;
 
         // Create a JWT token
-        const token = jwt.sign({ userId: userID, email: user.email }, secretKey, {
+        const token = jwt.sign({email }, secretKey, {
           expiresIn: '1h', // Token expiration time
         });
 
@@ -90,7 +88,6 @@ function verifyToken(req, res, next) {
 
   jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {
-
       return res.status(401).json({ message: 'Invalid token' });
     }
 
@@ -122,7 +119,6 @@ app.post('/register', async (req, res) => {
     // Hash the password using bcrypt
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    console.log(hashedPassword)
 
     // If the email doesn't exist, insert the new user into the database with the hashed password
     const result = await pool.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);

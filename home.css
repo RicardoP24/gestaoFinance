@@ -20,6 +20,7 @@ body {
   margin: 10px;
   border-radius: 8px;
   background: hsl(213deg 85% 97%);
+  overflow-x: auto;
 
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -81,12 +82,14 @@ button:hover {
 
 table {
   width: 100%;
+  
   border-collapse: collapse;
   margin-top: 20px;
 }
 
 table, th, td {
   border: 1px solid #ddd;
+
 }
 
 th, td {

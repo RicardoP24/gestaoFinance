@@ -70,52 +70,50 @@
 
 <script>
     // Function to check if a token exists
-function isTokenAvailable() {
-  const token = localStorage.getItem('authToken');
-  return token !== null && token !== undefined;
-}
-
-// Function to perform login based on token existence
-async function handleLogin() {
-
-  if (isTokenAvailable()) {
-    // Token exists, perform query to the server
-    const token = localStorage.getItem('authToken');
-
-    try {
-      const response = await fetch('http://localhost:3000/protected', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
-        },
-      });
-
-      console.log(response)
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('User is authenticated:', data);
-        window.open('app/home.html')
- 
-        // Add your logic for an authenticated user
-      } else {
-        console.error('Error:', response.statusText);
-        // Add your logic for handling server errors or unauthorized access
-      }
-    } catch (error) {
-      console.error('Error:', error.message);
-      // Add your logic for handling network errors
+    function isTokenAvailable() {
+        const token = localStorage.getItem('authToken');
+        return token !== null && token !== undefined;
     }
 
-  } else {
-    // Token doesn't exist, show login form or redirect to login page
-    console.log('User is not logged in');
-    // Add your logic for a user who needs to log in
-  }
-}
+    // Function to perform login based on token existence
+    async function handleLogin() {
 
-// Example usage
-handleLogin();
+        if (isTokenAvailable()) {
+            // Token exists, perform query to the server
+            const token = localStorage.getItem('authToken');
+
+            try {
+                const response = await fetch('http://localhost:3000/protected', {
+                    headers: {
+                        'Authorization': token,
+                    },
+                });
+
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('User is authenticated:', data);
+                    window.open('home.html', '_self')
+
+                    // Add your logic for an authenticated user
+                } else {
+                    console.error('Error:', response.statusText);
+                    // Add your logic for handling server errors or unauthorized access
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+                // Add your logic for handling network errors
+            }
+
+        } else {
+            // Token doesn't exist, show login form or redirect to login page
+            console.log('User is not logged in');
+            // Add your logic for a user who needs to log in
+        }
+    }
+
+    // Example usage
+    handleLogin();
 
     async function login() {
         const username = document.getElementById('username').value;
@@ -137,7 +135,7 @@ handleLogin();
                 const userID = data.userID;
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('userId', userID);
-                window.open('app/home.html')
+                window.open('home.html', '_self')
                 // Include the token in future requests to access protected routes
                 // Example: fetch('http://localhost:3000/protected', { headers: { 'Authorization': token }});
             } else {
