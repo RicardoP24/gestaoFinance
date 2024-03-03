@@ -1,5 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const http = require('http');
+const path = require('path');
+
 const bodyParser = require('body-parser');
 const cors = require('cors'); // Import the cors middleware
 require('dotenv').config();
@@ -8,7 +12,54 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const saltRounds = 10; // Number of salt rounds
 
+// Start the server
+const PORT = 3000;
+const PORT_FRONT = 3001;
 
+
+
+
+const server = http.createServer((req, res) => {
+  let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
+  const extname = String(path.extname(filePath)).toLowerCase();
+  let contentType = 'text/html';
+
+  // Set the default content type based on the file extension
+  const mimeTypes = {
+      '.html': 'text/html',
+      '.js': 'text/javascript',
+      '.css': 'text/css',
+      // Add more MIME types for additional file extensions
+  };
+
+  contentType = mimeTypes[extname] || 'application/octet-stream';
+
+  fs.readFile(filePath, (err, content) => {
+      if (err) {
+          if (err.code === 'ENOENT') {
+              // File not found
+              fs.readFile('./404.html', (error, content) => {
+                  res.writeHead(404, { 'Content-Type': 'text/html' });
+                  res.end(content, 'utf-8');
+              });
+          } else {
+              // Some server error
+              res.writeHead(500);
+              res.end('Sorry, check with the site admin for error: ' + err.code + ' ..\n');
+          }
+      } else {
+          // Successful response
+          res.writeHead(200, { 'Content-Type': contentType });
+          res.end(content, 'utf-8');
+      }
+  });
+});
+
+ 
+
+server.listen(PORT_FRONT, () => {
+  console.log(`Server is running on http://localhost:${PORT_FRONT}`);
+});
 
 const pool = new Pool({
   user: String(process.env.DB_USER),
@@ -19,6 +70,7 @@ const pool = new Pool({
 });
 
 pool.connect()
+
 
 // Middleware to parse JSON requests
 app.use(cors());
@@ -96,8 +148,7 @@ function verifyToken(req, res, next) {
   });
 }
 
-// Start the server
-const PORT = 3000;
+ 
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
