@@ -58,7 +58,7 @@ const server = http.createServer((req, res) => {
  
 
 server.listen(PORT_FRONT, () => {
-  console.log(`Server is running on http://localhost:${PORT_FRONT}`);
+  console.log(`Server is running on http://${process.env.IP}:${PORT_FRONT}`);
 });
 
 const pool = new Pool({
@@ -151,7 +151,7 @@ function verifyToken(req, res, next) {
  
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://${process.env.IP}:${PORT}`);
 });
 
  
